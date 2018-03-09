@@ -11,11 +11,11 @@ class BikaClient:
     def __init__(self, host='http://localhost:8080/Plone', username='admin',
                  password='secret'):
         self.__url = host
-        self.jar = requests.cookies.RequestsCookieJar()
+        self.s = requests.Session()
         self.__error = False
         try:
             self.__login(username, password)
-        except ConnectionError:
+        except requests.ConnectionError:
             self.__set_error()
 
     def __login(self, username, password):
@@ -28,8 +28,7 @@ class BikaClient:
         }
         api_service = 'login_form'
         url = self._make_bika_url(service=api_service, is_login_service=True)
-        r = requests.post(url, params=params)
-        self.jar = r.cookies
+        r = self.s.post(url, params=params)
 
     def is_error(self):
         return self.__error
@@ -45,9 +44,9 @@ class BikaClient:
     def _make_bika_request(self, url, params=dict()):
         self.__reset_error()
         try:
-            r = requests.post(url, params=params, cookies=self.jar)
+            r = self.s.post(url, params=params)
             data = r.text
-        except ConnectionError:
+        except requests.ConnectionError:
             self.__set_error()
             data = json.dumps(dict(error=self.is_error()))
         return data
@@ -636,7 +635,7 @@ class BikaClient:
                 key = k[:-1]
                 params[key] = list()
                 for v in values:
-                    value = {"{}".format(key): "{}".format(v)}
+                    value = v
                     params[key].append(value)
                 del params[k]
         return params
